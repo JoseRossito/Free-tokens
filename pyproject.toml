@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "free-tokens"
+version = "0.1.0"
+description = "Minimize Claude API token costs with context management, prompt caching, and response caching"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "diskcache>=5.6.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
+]
+
+[project.scripts]
+free-tokens = "cli.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["free_tokens", "cli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
