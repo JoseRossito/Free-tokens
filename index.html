@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#7C3AED">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Token Trim">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Token Trim</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #7C3AED;
+      --purple-dark: #5B21B6;
+      --purple-light: #EDE9FE;
+      --green: #10B981;
+      --red: #EF4444;
+      --bg: #0f0f23;
+      --surface: #1a1a3e;
+      --card: #1e1e42;
+      --border: #2d2d5e;
+      --text: #f0f0ff;
+      --muted: #8888bb;
+      --radius: 16px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+      padding: calc(var(--safe-top) + 16px) 20px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.4);
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { font-size: 0.8rem; opacity: 0.8; margin-top: 2px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1; padding: 12px 0; text-align: center;
+      font-size: 0.85rem; font-weight: 600; color: var(--muted);
+      border: none; background: none; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding-bottom: calc(var(--safe-bot) + 16px);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.5;
+      padding: 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    textarea:focus { border-color: var(--purple); }
+    textarea::placeholder { color: var(--muted); }
+
+    /* ── Token badge ── */
+    .token-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .token-badge {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .token-badge strong { color: var(--text); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      -webkit-user-select: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+    }
+    .btn-primary:disabled { opacity: 0.4; cursor: default; }
+    .btn-copy {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-copy.copied { color: var(--green); border-color: var(--green); }
+
+    /* ── Result ── */
+    .result-card {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .result-card.visible { display: flex; animation: slideUp 0.3s ease; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-text {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 1rem;
+      line-height: 1.5;
+      min-height: 80px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── Savings bar ── */
+    .savings {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .savings-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+    .savings-label { color: var(--muted); }
+    .savings-value { font-weight: 600; }
+    .savings-value.good { color: var(--green); }
+    .savings-value.bad  { color: var(--red); }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--green), #34D399);
+      transition: width 0.5s ease;
+    }
+
+    /* ── History tab ── */
+    #history-panel { display: none; }
+    #history-panel.active { display: flex; flex-direction: column; gap: 10px; }
+
+    .history-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .history-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .history-text {
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--purple);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      cursor: pointer;
+      align-self: flex-start;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 20px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .empty-state .icon { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Install banner ── */
+    #install-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--purple);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin: 0 16px;
+      font-size: 0.85rem;
+    }
+    #install-banner.visible { display: flex; }
+    #install-banner .install-text { flex: 1; line-height: 1.4; }
+    #install-banner button {
+      background: var(--purple);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #install-banner .close-btn {
+      background: none;
+      color: var(--muted);
+      padding: 4px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>✂️ Token Trim</h1>
+  <p>Optimiza tus mensajes para Claude</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('optimize')">Optimizar</button>
+  <button class="tab" onclick="switchTab('history')">Historial</button>
+</div>
+
+<div id="install-banner">
+  <span class="install-text">📲 <strong>Instala la app</strong> en tu iPhone para usarla sin internet</span>
+  <button onclick="showInstallHelp()">Cómo</button>
+  <button class="close-btn" onclick="dismissBanner()">✕</button>
+</div>
+
+<main>
+  <!-- OPTIMIZE TAB -->
+  <div id="optimize-panel">
+
+    <div class="card">
+      <label>Tu mensaje original</label>
+      <textarea id="input" placeholder="Escribe aquí lo que quieres preguntarle a Claude..." oninput="onInput()"></textarea>
+      <div class="token-row">
+        <span class="token-badge">~<strong id="tokens-in">0</strong> tokens</span>
+        <span class="token-badge" id="char-count" style="font-size:0.72rem">0 caracteres</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="optimize-btn" onclick="runOptimize()" disabled>
+      <span id="btn-label">Optimizar mensaje</span>
+    </button>
+
+    <div class="result-card card" id="result-card">
+      <label>Mensaje optimizado</label>
+      <div class="result-text" id="result-text"></div>
+
+      <div class="savings" id="savings-box">
+        <div class="savings-row">
+          <span class="savings-label">Antes</span>
+          <span class="savings-value" id="s-before">— tokens</span>
+        </div>
+        <div class="savings-row">
+          <span class="savings-label">Después</span>
+          <span class="savings-value" id="s-after">— tokens</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        <div class="savings-row">
+          <span class="savings-label">Ahorro</span>
+          <span class="savings-value good" id="s-pct">—</span>
+        </div>
+      </div>
+
+      <button class="btn btn-copy" id="copy-btn" onclick="copyResult()">
+        📋 Copiar y pegar en Claude
+      </button>
+    </div>
+
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="history-panel">
+    <div id="history-list"></div>
+  </div>
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+//  Optimization Engine
+// ─────────────────────────────────────────────
+
+const VERBOSE = [
+  // English
+  ['in order to', 'to'],
+  ['due to the fact that', 'because'],
+  ['at this point in time', 'now'],
+  ['in the event that', 'if'],
+  ['with the exception of', 'except'],
+  ['in spite of the fact that', 'although'],
+  ['has the ability to', 'can'],
+  ['is able to', 'can'],
+  ['is going to', 'will'],
+  ['prior to', 'before'],
+  ['subsequent to', 'after'],
+  ['with regards to', 'about'],
+  ['in regards to', 'about'],
+  ['as a result of', 'because of'],
+  ['in close proximity', 'near'],
+  ['utilize', 'use'],
+  ['facilitate', 'help'],
+  ['commence', 'start'],
+  ['terminate', 'end'],
+  ['assistance', 'help'],
+  ['sufficient', 'enough'],
+  ['it is important to note that', ''],
+  ['it should be noted that', ''],
+  ['please note that', ''],
+  ['i would like to', 'i want to'],
+  ['i was wondering if you could', 'could you'],
+  ['could you please', 'please'],
+  ['would you be able to', 'can you'],
+  ['i need you to', 'please'],
+  ['make sure to', ''],
+  ['on a daily basis', 'daily'],
+  ['on a regular basis', 'regularly'],
+  ['at all times', 'always'],
+  ['for the purpose of', 'to'],
+  ['in the process of', 'while'],
+  // Spanish
+  ['con el fin de', 'para'],
+  ['con la finalidad de', 'para'],
+  ['con el objetivo de', 'para'],
+  ['debido al hecho de que', 'porque'],
+  ['a causa de que', 'porque'],
+  ['en el caso de que', 'si'],
+  ['tiene la capacidad de', 'puede'],
+  ['es capaz de', 'puede'],
+  ['en este momento', 'ahora'],
+  ['con anterioridad a', 'antes de'],
+  ['con posterioridad a', 'después de'],
+  ['con respecto a', 'sobre'],
+  ['en lo que respecta a', 'sobre'],
+  ['es importante destacar que', ''],
+  ['es importante mencionar que', ''],
+  ['cabe señalar que', ''],
+  ['cabe destacar que', ''],
+  ['hay que tener en cuenta que', ''],
+  ['me gustaría preguntarte', ''],
+  ['me gustaría que', 'quiero que'],
+  ['¿podrías por favor', '¿puedes'],
+  ['podrías por favor', 'por favor'],
+  ['¿serías tan amable de', '¿puedes'],
+  ['necesito que', 'por favor'],
+  ['quiero pedirte que', 'por favor'],
+  ['utilizar', 'usar'],
+  ['proporcionar', 'dar'],
+  ['asistencia', 'ayuda'],
+  ['de manera regular', 'regularmente'],
+  ['de forma constante', 'constantemente'],
+  ['en todo momento', 'siempre'],
+  ['a lo largo del tiempo', 'con el tiempo'],
+];
+
+const FILLERS_EN = [
+  'basically','actually','literally','certainly','absolutely','honestly',
+  'frankly','obviously','clearly','simply','merely','quite','rather',
+  'somewhat','definitely','really','very','truly','totally','completely',
+  'extremely','incredibly','honestly','just','pretty much'
+];
+const FILLERS_ES = [
+  'básicamente','literalmente','ciertamente','absolutamente','honestamente',
+  'francamente','obviamente','claramente','simplemente','meramente',
+  'bastante','realmente','verdaderamente','totalmente','completamente',
+  'extremadamente','increíblemente','sinceramente'
+];
+
+function detectLang(text) {
+  const esWords = ['que','de','el','la','en','y','es','un','una','para','con','por','como','más','también','pero','si','lo','le','no','se','su','al','del','hay','este','esta'];
+  const lower = text.toLowerCase();
+  const hits = esWords.filter(w => new RegExp(`\\b${w}\\b`).test(lower)).length;
+  return hits >= 3 ? 'es' : 'en';
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function optimize(text) {
+  let out = text;
+
+  // 1. Verbose phrase replacements
+  for (const [from, to] of VERBOSE) {
+    const re = new RegExp(`\\b${escapeRegex(from)}\\b`, 'gi');
+    out = out.replace(re, to);
+  }
+
+  // 2. Filler word removal (only clearly adverbial, preserve sentence meaning)
+  const fillers = detectLang(text) === 'es' ? FILLERS_ES : FILLERS_EN;
+  for (const f of fillers) {
+    // Remove only when surrounded by whitespace or punctuation, not mid-word
+    const re = new RegExp(`(?<=[\\s,;]|^)${escapeRegex(f)}(?=[\\s,;.]|$)`, 'gi');
+    out = out.replace(re, '');
+  }
+
+  // 3. Collapse whitespace artifacts
+  out = out
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/ ([.,!?;:])/g, '$1')
+    .replace(/\( \)/g, '')
+    .replace(/,\s*,/g, ',')
+    .trim();
+
+  return out;
+}
+
+function estimateTokens(text) {
+  return Math.max(0, Math.ceil(text.trim().length / 4));
+}
+
+// ─────────────────────────────────────────────
+//  UI Logic
+// ─────────────────────────────────────────────
+
+let currentResult = '';
+
+function onInput() {
+  const text = document.getElementById('input').value;
+  const tokens = estimateTokens(text);
+  document.getElementById('tokens-in').textContent = tokens;
+  document.getElementById('char-count').textContent = `${text.length} caracteres`;
+  document.getElementById('optimize-btn').disabled = text.trim().length < 10;
+
+  // Hide result if user edits
+  document.getElementById('result-card').classList.remove('visible');
+  currentResult = '';
+}
+
+function runOptimize() {
+  const input = document.getElementById('input').value.trim();
+  if (!input) return;
+
+  // Brief loading effect
+  const btn = document.getElementById('optimize-btn');
+  const label = document.getElementById('btn-label');
+  btn.disabled = true;
+  label.innerHTML = '<div class="spinner"></div>';
+
+  setTimeout(() => {
+    const result = optimize(input);
+    currentResult = result;
+
+    const tBefore = estimateTokens(input);
+    const tAfter  = estimateTokens(result);
+    const saved   = tBefore - tAfter;
+    const pct     = tBefore > 0 ? Math.round((saved / tBefore) * 100) : 0;
+
+    document.getElementById('result-text').textContent = result;
+    document.getElementById('s-before').textContent = `${tBefore} tokens`;
+    document.getElementById('s-after').textContent  = `${tAfter} tokens`;
+    document.getElementById('s-pct').textContent    = pct > 0 ? `-${pct}% ahorro ✓` : 'Sin cambios significativos';
+    document.getElementById('s-pct').className      = `savings-value ${pct > 0 ? 'good' : 'bad'}`;
+
+    const fill = Math.min(100, pct);
+    document.getElementById('progress-fill').style.width = `${fill}%`;
+
+    document.getElementById('result-card').classList.add('visible');
+
+    label.textContent = 'Optimizar mensaje';
+    btn.disabled = false;
+
+    // Save to history
+    if (saved > 0) {
+      saveHistory({ original: input, optimized: result, pct, date: new Date().toISOString() });
+    }
+  }, 400);
+}
+
+function copyResult() {
+  if (!currentResult) return;
+  navigator.clipboard.writeText(currentResult).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ Copiado — pega en Claude';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copiar y pegar en Claude';
+      btn.classList.remove('copied');
+    }, 2500);
+  }).catch(() => {
+    // Fallback for browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = currentResult;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ Copiado';
+    setTimeout(() => { btn.textContent = '📋 Copiar y pegar en Claude'; }, 2000);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  Tab switching
+// ─────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['optimize','history'][i] === tab);
+  });
+  document.getElementById('optimize-panel').style.display = tab === 'optimize' ? 'contents' : 'none';
+  const hp = document.getElementById('history-panel');
+  hp.classList.toggle('active', tab === 'history');
+  if (tab === 'history') renderHistory();
+}
+
+// ─────────────────────────────────────────────
+//  History (localStorage)
+// ─────────────────────────────────────────────
+
+function saveHistory(entry) {
+  const history = getHistory();
+  history.unshift(entry);
+  if (history.length > 30) history.length = 30;
+  localStorage.setItem('tt_history', JSON.stringify(history));
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('tt_history') || '[]'); }
+  catch { return []; }
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const history = getHistory();
+
+  if (history.length === 0) {
+    list.innerHTML = '<div class="empty-state"><span class="icon">📭</span>Aún no has optimizado ningún mensaje.<br>Ve a la pestaña Optimizar para empezar.</div>';
+    return;
+  }
+
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item">
+      <div class="history-meta">
+        <span>${formatDate(h.date)}</span>
+        <span class="savings-value good">-${h.pct}% tokens</span>
+      </div>
+      <div class="history-text">${h.optimized}</div>
+      <button class="history-btn" onclick="restoreHistory(${i})">Usar este</button>
+    </div>
+  `).join('');
+}
+
+function restoreHistory(i) {
+  const h = getHistory()[i];
+  if (!h) return;
+  document.getElementById('input').value = h.original;
+  onInput();
+  switchTab('optimize');
+  setTimeout(runOptimize, 100);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+// ─────────────────────────────────────────────
+//  PWA Install banner
+// ─────────────────────────────────────────────
+
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('tt_banner_dismissed')) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
+});
+
+function showInstallHelp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  } else {
+    alert('En Safari: toca el botón Compartir (□↑) → "Agregar a pantalla de inicio" → Agregar');
+  }
+}
+
+function dismissBanner() {
+  localStorage.setItem('tt_banner_dismissed', '1');
+  document.getElementById('install-banner').classList.remove('visible');
+}
+
+// ─────────────────────────────────────────────
+//  Service Worker registration
+// ─────────────────────────────────────────────
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
