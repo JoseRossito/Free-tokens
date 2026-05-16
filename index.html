@@ -384,8 +384,139 @@
 //  Optimization Engine
 // ─────────────────────────────────────────────
 
+// ── Verbose phrase replacements (longest first to avoid partial matches) ──
 const VERBOSE = [
-  // English
+  // Spanish: request patterns
+  ['me gustaría que me ayudaras a', 'ayúdame a'],
+  ['me gustaría que me ayudes a', 'ayúdame a'],
+  ['me gustaría que me ayudaras con', 'ayúdame con'],
+  ['me gustaría que me ayudes con', 'ayúdame con'],
+  ['me gustaría pedirte que me', ''],
+  ['me gustaría pedirte que', ''],
+  ['me gustaría que pudieras', 'por favor'],
+  ['me gustaría preguntarte sobre', 'pregunta:'],
+  ['me gustaría preguntarte', ''],
+  ['me gustaría saber', 'dime'],
+  ['me gustaría que', 'quiero que'],
+  ['quisiera pedirte que me', ''],
+  ['quisiera pedirte que', ''],
+  ['quisiera que me expliques', 'explícame'],
+  ['quisiera que me digas', 'dime'],
+  ['quisiera que me ayudes a', 'ayúdame a'],
+  ['quisiera que me', ''],
+  ['quisiera saber', 'dime'],
+  ['quiero pedirte que me', ''],
+  ['quiero pedirte que', ''],
+  ['quiero que me expliques', 'explícame'],
+  ['quiero que me digas', 'dime'],
+  ['quiero que me hagas', 'hazme'],
+  ['quiero que me des', 'dame'],
+  ['quiero que me ayudes a', 'ayúdame a'],
+  ['quiero que me ayudes con', 'ayúdame con'],
+  ['quiero que me', ''],
+  ['necesito que me ayudes a', 'ayúdame a'],
+  ['necesito que me ayudes con', 'ayúdame con'],
+  ['necesito que me expliques', 'explícame'],
+  ['necesito que me digas', 'dime'],
+  ['necesito que', 'por favor'],
+  ['me podrías ayudar a', 'ayúdame a'],
+  ['me podrías ayudar con', 'ayúdame con'],
+  ['me puedes ayudar a', 'ayúdame a'],
+  ['me puedes ayudar con', 'ayúdame con'],
+  ['¿me podrías ayudar a', 'ayúdame a'],
+  ['¿me puedes ayudar a', 'ayúdame a'],
+  ['¿podrías explicarme', 'explícame'],
+  ['¿podrías decirme', 'dime'],
+  ['¿podrías darme', 'dame'],
+  ['¿podrías ayudarme a', 'ayúdame a'],
+  ['¿podrías ayudarme con', 'ayúdame con'],
+  ['¿podrías hacer', 'haz'],
+  ['¿podrías por favor', '¿puedes'],
+  ['¿serías tan amable de', '¿puedes'],
+  ['¿puedes explicarme', 'explícame'],
+  ['¿puedes decirme', 'dime'],
+  ['¿puedes darme', 'dame'],
+  ['¿puedes ayudarme a', 'ayúdame a'],
+  ['¿puedes ayudarme con', 'ayúdame con'],
+  ['¿puedes hacer', 'haz'],
+  ['podrías por favor', 'por favor'],
+  // Spanish: filler phrases
+  ['es importante destacar que', ''],
+  ['es importante mencionar que', ''],
+  ['es importante aclarar que', ''],
+  ['es importante señalar que', ''],
+  ['cabe señalar que', ''],
+  ['cabe destacar que', ''],
+  ['cabe mencionar que', ''],
+  ['hay que tener en cuenta que', ''],
+  ['tener en cuenta que', ''],
+  ['la verdad es que', ''],
+  ['en realidad', ''],
+  ['de hecho', ''],
+  ['en mi opinión', ''],
+  ['desde mi punto de vista', ''],
+  ['a mi parecer', ''],
+  ['como ya te dije', ''],
+  ['como mencioné anteriormente', ''],
+  ['como te comenté antes', ''],
+  ['como te comenté', ''],
+  ['como mencioné', ''],
+  ['tal y como', 'como'],
+  ['no obstante', 'pero'],
+  ['a pesar de ello', 'aunque'],
+  ['sin embargo', 'pero'],
+  // Spanish: verbose constructions
+  ['con el fin de', 'para'],
+  ['con la finalidad de', 'para'],
+  ['con el objetivo de', 'para'],
+  ['con el propósito de', 'para'],
+  ['debido al hecho de que', 'porque'],
+  ['a causa de que', 'porque'],
+  ['en el caso de que', 'si'],
+  ['tiene la capacidad de', 'puede'],
+  ['es capaz de', 'puede'],
+  ['en este momento', 'ahora'],
+  ['en la actualidad', 'actualmente'],
+  ['con anterioridad a', 'antes de'],
+  ['con posterioridad a', 'después de'],
+  ['con respecto a', 'sobre'],
+  ['en lo que respecta a', 'sobre'],
+  ['en relación con', 'sobre'],
+  ['de manera regular', 'regularmente'],
+  ['de forma constante', 'constantemente'],
+  ['en todo momento', 'siempre'],
+  ['a lo largo del tiempo', 'con el tiempo'],
+  ['utilizar', 'usar'],
+  ['proporcionar', 'dar'],
+  ['asistencia', 'ayuda'],
+  // English: request patterns
+  ['i was wondering if you could help me with', 'help me with'],
+  ['i was wondering if you could', 'could you'],
+  ['i would like you to help me with', 'help me with'],
+  ['i would like you to', 'please'],
+  ['i would like to ask you to', 'please'],
+  ['i would like to', 'i want to'],
+  ['would you be so kind as to', 'please'],
+  ['would you be able to', 'can you'],
+  ['could you please help me with', 'help me with'],
+  ['could you please', 'please'],
+  ['i need you to help me with', 'help me with'],
+  ['i need you to', 'please'],
+  ['i need help with', 'help me with'],
+  ['can you help me with', 'help me with'],
+  ['can you please', 'please'],
+  // English: filler phrases
+  ['it is important to note that', ''],
+  ['it is worth noting that', ''],
+  ['it should be noted that', ''],
+  ['please note that', ''],
+  ['as i mentioned earlier', ''],
+  ['as i mentioned before', ''],
+  ['as mentioned previously', ''],
+  ['as previously mentioned', ''],
+  ['make sure to', ''],
+  ['make sure that', ''],
+  // English: verbose constructions
   ['in order to', 'to'],
   ['due to the fact that', 'because'],
   ['at this point in time', 'now'],
@@ -401,78 +532,37 @@ const VERBOSE = [
   ['in regards to', 'about'],
   ['as a result of', 'because of'],
   ['in close proximity', 'near'],
+  ['on a daily basis', 'daily'],
+  ['on a regular basis', 'regularly'],
+  ['at all times', 'always'],
+  ['for the purpose of', 'to'],
+  ['in the process of', 'while'],
   ['utilize', 'use'],
   ['facilitate', 'help'],
   ['commence', 'start'],
   ['terminate', 'end'],
   ['assistance', 'help'],
   ['sufficient', 'enough'],
-  ['it is important to note that', ''],
-  ['it should be noted that', ''],
-  ['please note that', ''],
-  ['i would like to', 'i want to'],
-  ['i was wondering if you could', 'could you'],
-  ['could you please', 'please'],
-  ['would you be able to', 'can you'],
-  ['i need you to', 'please'],
-  ['make sure to', ''],
-  ['on a daily basis', 'daily'],
-  ['on a regular basis', 'regularly'],
-  ['at all times', 'always'],
-  ['for the purpose of', 'to'],
-  ['in the process of', 'while'],
-  // Spanish
-  ['con el fin de', 'para'],
-  ['con la finalidad de', 'para'],
-  ['con el objetivo de', 'para'],
-  ['debido al hecho de que', 'porque'],
-  ['a causa de que', 'porque'],
-  ['en el caso de que', 'si'],
-  ['tiene la capacidad de', 'puede'],
-  ['es capaz de', 'puede'],
-  ['en este momento', 'ahora'],
-  ['con anterioridad a', 'antes de'],
-  ['con posterioridad a', 'después de'],
-  ['con respecto a', 'sobre'],
-  ['en lo que respecta a', 'sobre'],
-  ['es importante destacar que', ''],
-  ['es importante mencionar que', ''],
-  ['cabe señalar que', ''],
-  ['cabe destacar que', ''],
-  ['hay que tener en cuenta que', ''],
-  ['me gustaría preguntarte', ''],
-  ['me gustaría que', 'quiero que'],
-  ['¿podrías por favor', '¿puedes'],
-  ['podrías por favor', 'por favor'],
-  ['¿serías tan amable de', '¿puedes'],
-  ['necesito que', 'por favor'],
-  ['quiero pedirte que', 'por favor'],
-  ['utilizar', 'usar'],
-  ['proporcionar', 'dar'],
-  ['asistencia', 'ayuda'],
-  ['de manera regular', 'regularmente'],
-  ['de forma constante', 'constantemente'],
-  ['en todo momento', 'siempre'],
-  ['a lo largo del tiempo', 'con el tiempo'],
 ];
 
+// Words safe to drop without changing meaning
 const FILLERS_EN = [
-  'basically','actually','literally','certainly','absolutely','honestly',
-  'frankly','obviously','clearly','simply','merely','quite','rather',
-  'somewhat','definitely','really','very','truly','totally','completely',
-  'extremely','incredibly','honestly','just','pretty much'
+  'basically','literally','certainly','absolutely','honestly',
+  'frankly','obviously','simply','merely','quite','rather',
+  'somewhat','definitely','truly','totally','completely',
+  'extremely','incredibly','actually','just'
 ];
 const FILLERS_ES = [
   'básicamente','literalmente','ciertamente','absolutamente','honestamente',
-  'francamente','obviamente','claramente','simplemente','meramente',
-  'bastante','realmente','verdaderamente','totalmente','completamente',
+  'francamente','obviamente','simplemente','meramente',
+  'verdaderamente','totalmente','completamente',
   'extremadamente','increíblemente','sinceramente'
 ];
 
 function detectLang(text) {
-  const esWords = ['que','de','el','la','en','y','es','un','una','para','con','por','como','más','también','pero','si','lo','le','no','se','su','al','del','hay','este','esta'];
+  const esWords = ['que','de','el','la','en','y','es','un','una','para','con','por','como','más','también','pero','si','lo','le','no','se','su','al','del','hay','este','esta','cómo','qué','cuál'];
   const lower = text.toLowerCase();
-  const hits = esWords.filter(w => new RegExp(`\\b${w}\\b`).test(lower)).length;
+  const hits = esWords.filter(w => new RegExp('(^|\\s)' + w + '(\\s|$)').test(lower)).length;
   return hits >= 3 ? 'es' : 'en';
 }
 
@@ -480,33 +570,75 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Remove greeting at start of message
+function removeGreeting(text) {
+  return text
+    .replace(/^(¡?\s*hola\s*(claude\s*)?[!,.]?\s*)+/gi, '')
+    .replace(/^(buenos?\s+(días|tardes|noches)\s*[!,.]?\s*)+/gi, '')
+    .replace(/^(¿cómo\s+(estás|está|te\s+va)[?!,.]?\s*)+/gi, '')
+    .replace(/^(espero\s+que\s+estés\s+bien\s*[.,]?\s*)/gi, '')
+    .replace(/^(hi[!,]?\s*|hello[!,]?\s*|hey[!,]?\s*)+/gi, '')
+    .replace(/^(good\s+(morning|afternoon|evening)[!,.]?\s*)+/gi, '');
+}
+
+// Remove closing pleasantries at end of message
+function removeClosing(text) {
+  return text
+    .replace(/[,.]?\s*(muchas\s+)?gracias\s+de\s+antemano\s*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*espero\s+(tu\s+respuesta|que\s+puedas\s+ayudarme|que\s+me\s+puedas\s+ayudar|poder\s+contar\s+con\s+tu\s+ayuda)\s*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*quedo\s+en\s+espera\s*[^.]*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*cualquier\s+duda[^.]*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*(saludos(\s+cordiales)?|un\s+saludo)\s*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*(thank(s|\s+you)\s+in\s+advance)\s*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*(looking\s+forward\s+to\s+your\s+(reply|response))\s*[.!]?\s*$/gi, '')
+    .replace(/[,.]?\s*(i\s+hope\s+you\s+can\s+help\s+me)\s*[.!]?\s*$/gi, '');
+}
+
+// Replace verbose phrase — no lookbehind (Safari iOS compatible)
+function replaceVerbose(text) {
+  for (const [from, to] of VERBOSE) {
+    const esc = escapeRegex(from);
+    const re = new RegExp('(^|[\\s¿¡,;:!?"\'(\\[])' + esc + '(?=[\\s¿¡,;:!?"\'()\\].–]|$)', 'gi');
+    text = text.replace(re, (_, pre) => to ? pre + to : pre);
+  }
+  return text;
+}
+
+// Remove filler adverbs — no lookbehind (Safari iOS compatible)
+function removeFillers(text) {
+  const fillers = detectLang(text) === 'es' ? FILLERS_ES : FILLERS_EN;
+  for (const f of fillers) {
+    const esc = escapeRegex(f);
+    const re = new RegExp('(^|[\\s])' + esc + '(?=[\\s,;.!?]|$)', 'gi');
+    text = text.replace(re, '$1');
+  }
+  return text;
+}
+
 function optimize(text) {
   let out = text;
 
-  // 1. Verbose phrase replacements
-  for (const [from, to] of VERBOSE) {
-    const re = new RegExp(`\\b${escapeRegex(from)}\\b`, 'gi');
-    out = out.replace(re, to);
+  out = removeGreeting(out).trim();
+  out = removeClosing(out).trim();
+  out = replaceVerbose(out);
+  out = removeFillers(out);
+
+  // Capitalize first letter after cleanup
+  if (out.length > 1) {
+    out = out.charAt(0).toUpperCase() + out.slice(1);
   }
 
-  // 2. Filler word removal (only clearly adverbial, preserve sentence meaning)
-  const fillers = detectLang(text) === 'es' ? FILLERS_ES : FILLERS_EN;
-  for (const f of fillers) {
-    // Remove only when surrounded by whitespace or punctuation, not mid-word
-    const re = new RegExp(`(?<=[\\s,;]|^)${escapeRegex(f)}(?=[\\s,;.]|$)`, 'gi');
-    out = out.replace(re, '');
-  }
-
-  // 3. Collapse whitespace artifacts
+  // Clean whitespace artifacts
   out = out
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/ ([.,!?;:])/g, '$1')
-    .replace(/\( \)/g, '')
+    .replace(/,\s*\./g, '.')
+    .replace(/\(\s*\)/g, '')
     .replace(/,\s*,/g, ',')
     .trim();
 
-  return out;
+  return out || text; // never return empty
 }
 
 function estimateTokens(text) {
