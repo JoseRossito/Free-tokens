@@ -64,7 +64,7 @@ class FreeTokensClient:
             else self._system
         )
 
-        cache_key = hash_request(self._model, system, messages, max_tokens)
+        cache_key = hash_request(self._model, system, messages, max_tokens, temperature)
 
         if self._response_cache_enabled:
             cached = self._response_cache.get(cache_key)
@@ -132,7 +132,7 @@ class FreeTokensClient:
             else (system or self._system)
         )
         messages = [{"role": "user", "content": prompt}]
-        cache_key = hash_request(self._model, sys_block, messages, max_tokens)
+        cache_key = hash_request(self._model, sys_block, messages, max_tokens, temperature=1.0)
 
         if self._response_cache_enabled:
             cached = self._response_cache.get(cache_key)
