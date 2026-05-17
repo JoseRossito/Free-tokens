@@ -11,6 +11,7 @@ def _mock_response(text: str, input_tokens: int = 100, output_tokens: int = 50):
     usage.cache_read_input_tokens = 0
 
     content = MagicMock()
+    content.type = "text"
     content.text = text
 
     response = MagicMock()
@@ -99,3 +100,44 @@ def test_usage_report_runs_without_error(capsys):
         client.chat("test")
 
     client.get_usage_report()  # should not raise
+
+
+def test_chat_empty_content_returns_empty_string():
+    client = _make_client()
+
+    response = MagicMock()
+    response.content = []
+    response.id = "msg_test"
+    response.usage = MagicMock(
+        input_tokens=10, output_tokens=0,
+        cache_creation_input_tokens=0, cache_read_input_tokens=0,
+    )
+
+    with patch.object(client._anthropic.messages, "create", return_value=response):
+        result = client.chat("Hi")
+
+    assert result == ""
+
+
+def test_chat_tool_use_block_returns_only_text():
+    client = _make_client()
+
+    tool_block = MagicMock()
+    tool_block.type = "tool_use"
+
+    text_block = MagicMock()
+    text_block.type = "text"
+    text_block.text = "Here is the answer."
+
+    response = MagicMock()
+    response.content = [tool_block, text_block]
+    response.id = "msg_test"
+    response.usage = MagicMock(
+        input_tokens=20, output_tokens=10,
+        cache_creation_input_tokens=0, cache_read_input_tokens=0,
+    )
+
+    with patch.object(client._anthropic.messages, "create", return_value=response):
+        result = client.chat("What is 2+2?")
+
+    assert result == "Here is the answer."

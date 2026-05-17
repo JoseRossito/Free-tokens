@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import TYPE_CHECKING, Literal
 
@@ -18,6 +19,14 @@ if TYPE_CHECKING:
 load_dotenv()
 
 Strategy = Literal["trim", "summarize"]
+
+
+def _extract_text(response) -> str:
+    texts = [b.text for b in response.content if getattr(b, "type", "") == "text"]
+    if not texts:
+        logging.warning("No text block in response %s", getattr(response, "id", "?"))
+        return ""
+    return "".join(texts)
 
 
 class FreeTokensClient:
@@ -95,7 +104,7 @@ class FreeTokensClient:
             kwargs["system"] = system
 
         response = self._anthropic.messages.create(**kwargs)
-        text = response.content[0].text
+        text = _extract_text(response)
 
         usage = response.usage
         rec = UsageRecord(
@@ -155,7 +164,7 @@ class FreeTokensClient:
             kwargs["system"] = sys_block
 
         response = self._anthropic.messages.create(**kwargs)
-        text = response.content[0].text
+        text = _extract_text(response)
         usage = response.usage
 
         rec = UsageRecord(
