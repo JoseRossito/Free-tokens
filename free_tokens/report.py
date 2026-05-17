@@ -1,13 +1,29 @@
+import warnings
 from datetime import datetime, timedelta
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from .storage import UsageStorage
 
-# Approximate Haiku pricing (per million tokens)
-INPUT_COST  = 0.80
-OUTPUT_COST = 4.00
-CACHE_READ_COST = 0.08
+# Precios oficiales Anthropic por millón de tokens (input, output, cache_read)
+# Fuente: https://www.anthropic.com/pricing — mayo 2026
+_PRICES: dict[str, tuple[float, float, float]] = {
+    "claude-haiku-4-5":  (1.00,  5.00, 0.10),
+    "claude-sonnet-4-6": (3.00, 15.00, 0.30),
+    "claude-opus-4-7":  (15.00, 75.00, 1.50),
+}
+_FALLBACK_PRICES = (3.00, 15.00, 0.30)  # Sonnet como fallback
+
+
+def _get_prices(model: str) -> tuple[float, float, float]:
+    for prefix, prices in _PRICES.items():
+        if model.startswith(prefix):
+            return prices
+    warnings.warn(
+        f"Modelo '{model}' no encontrado en tabla de precios; usando precios de Sonnet como fallback.",
+        stacklevel=2,
+    )
+    return _FALLBACK_PRICES
 
 
 class ReportGenerator:
@@ -23,14 +39,19 @@ class ReportGenerator:
             console.print(f"[yellow]No hay registros en los últimos {days} días.[/yellow]")
             return
 
-        # Aggregate
+        # Aggregate — costo calculado por registro con el precio correcto de su modelo
         by_day: dict = {}
         totals = dict(api=0, hits=0, input=0, output=0, cache_read=0, saved_response=0)
+        cost_used = 0.0
+        cost_saved = 0.0
 
         for r in records:
             day = r["timestamp"][:10]
             if day not in by_day:
                 by_day[day] = dict(api=0, hits=0, input=0, output=0, saved=0)
+
+            in_p, out_p, cr_p = _get_prices(r.get("model", ""))
+
             if r["source"] == "api":
                 by_day[day]["api"] += 1
                 by_day[day]["input"] += r["input_tokens"]
@@ -39,17 +60,17 @@ class ReportGenerator:
                 totals["input"] += r["input_tokens"]
                 totals["output"] += r["output_tokens"]
                 totals["cache_read"] += r["cache_read_tokens"]
+                cost_used += (r["input_tokens"] * in_p + r["output_tokens"] * out_p) / 1_000_000
+                cost_saved += r["cache_read_tokens"] * (in_p - cr_p) / 1_000_000
             elif r["source"] == "response_cache":
                 saved = r["input_tokens"] + r["output_tokens"]
                 by_day[day]["hits"] += 1
                 by_day[day]["saved"] += saved
                 totals["hits"] += 1
                 totals["saved_response"] += saved
+                cost_saved += saved * (in_p + out_p) / 2 / 1_000_000
 
         saved_prompt = int(totals["cache_read"] * 0.9)
-        cost_used = (totals["input"] * INPUT_COST + totals["output"] * OUTPUT_COST) / 1_000_000
-        cost_saved = (totals["saved_response"] * (INPUT_COST + OUTPUT_COST) / 2 +
-                      totals["cache_read"] * (INPUT_COST - CACHE_READ_COST)) / 1_000_000
 
         # Summary
         summary = Table(show_header=False, box=None, padding=(0, 1))
@@ -61,7 +82,7 @@ class ReportGenerator:
         summary.add_row("Tokens salida usados", f"{totals['output']:,}")
         summary.add_row("Ahorro response cache", f"{totals['saved_response']:,} tokens")
         summary.add_row("Ahorro prompt cache (~90%)", f"{saved_prompt:,} tokens")
-        summary.add_row("Costo estimado (Haiku)", f"${cost_used:.4f}")
+        summary.add_row("Costo estimado", f"${cost_used:.4f}")
         summary.add_row("Costo ahorrado estimado", f"${cost_saved:.4f}")
         console.print(Panel(summary, title=f"Reporte — últimos {days} días", border_style="purple"))
 
