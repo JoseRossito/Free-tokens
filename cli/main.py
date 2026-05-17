@@ -20,6 +20,7 @@ def _make_client(
     cache_ttl: int,
 ):
     from free_tokens import FreeTokensClient
+    from free_tokens.storage import UsageStorage
 
     return FreeTokensClient(
         model=model,
@@ -30,6 +31,7 @@ def _make_client(
         prompt_cache_enabled=not no_prompt_cache,
         cache_dir=cache_dir or None,
         cache_ttl=cache_ttl,
+        storage=UsageStorage(),
     )
 
 
@@ -128,3 +130,40 @@ def bench(prompt, times, model, max_tokens, cache_dir, cache_ttl):
     stats = client._response_cache.stats()
     hit_rate = stats["hits"] / (stats["hits"] + stats["misses"]) * 100 if (stats["hits"] + stats["misses"]) > 0 else 0
     console.print(f"Cache hit rate: [bold green]{hit_rate:.0f}%[/bold green] ({stats['hits']}/{stats['hits'] + stats['misses']})")
+
+
+@cli.command()
+@click.option("--days", default=7, show_default=True, help="Número de días a incluir en el reporte.")
+def report(days):
+    """Muestra el reporte de uso de tokens de los últimos N días."""
+    from free_tokens.storage import UsageStorage
+    from free_tokens.report import ReportGenerator
+    ReportGenerator(UsageStorage()).print_report(days=days)
+
+
+@cli.command()
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=8080, show_default=True)
+@click.option("--model", default="claude-sonnet-4-6", show_default=True)
+@click.option("--system", default="You are a helpful assistant.", show_default=True)
+def serve(host, port, model, system):
+    """Inicia un servidor HTTP para integrar free-tokens con otras apps (agente de WhatsApp, etc.).
+
+    \b
+    Endpoints disponibles:
+      POST /chat          — chat multi-turno (session_id para separar conversaciones)
+      POST /single        — pregunta única sin historial
+      DELETE /session/:id — reinicia una conversación
+      GET  /report        — reporte JSON de uso
+      GET  /health        — health check
+    """
+    try:
+        import uvicorn
+    except ImportError:
+        console.print("[red]Instala las dependencias del servidor:[/red] pip install 'free-tokens[server]'")
+        return
+    from free_tokens.server import create_app
+    app = create_app(model=model, system=system)
+    console.print(f"[bold green]free-tokens API[/bold green] corriendo en [cyan]http://{host}:{port}[/cyan]")
+    console.print("[dim]POST /chat  POST /single  DELETE /session/:id  GET /report  GET /health[/dim]")
+    uvicorn.run(app, host=host, port=port)

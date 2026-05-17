@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Literal
 
 from rich.console import Console
@@ -12,6 +13,10 @@ class UsageRecord:
     output_tokens: int = 0
     cache_creation_input_tokens: int = 0
     cache_read_input_tokens: int = 0
+    timestamp: datetime = field(default_factory=datetime.now)
+    prompt_preview: str = ""
+    model: str = ""
+    session_id: str = ""
 
 
 @dataclass
